@@ -1,5 +1,7 @@
 # AniVerse
 
+**Live:** https://rajsecure302-ux.github.io/aniverse/
+
 A fast, dark, cinematic anime site — trending rows, official trailers, instant search, a personal watchlist, and a built-in player for local video files.
 
 No build step, no framework, no tracking. Just `index.html`, `style.css`, `app.js`.
