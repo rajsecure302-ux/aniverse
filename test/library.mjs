@@ -122,6 +122,34 @@ try {
   out.libraryClosed = $("#library").hidden;
   out.hashHome = win.location.hash;
 
+  // detail sheet must show the matching library episodes
+  win.location.hash = "#/anime/113415";
+  await until(() => !$("#modal").hidden && $$("#mEps .se-ep").length >= 3, "sheet episodes", 30000);
+  out.sheet = {
+    head: $("#mEps .se-head").textContent.trim(),
+    episodes: $$("#mEps .se-ep").length,
+    resumeBtn: $("#mEps .se-top .btn").textContent.trim(),
+  };
+  $("#mEps .se-ep").click();
+  await until(() => !$("#libPlayer").hidden, "sheet -> player");
+  out.sheetPlayer = $("#lvName").textContent.trim();
+  $("#lvClose").click();
+  await wait(150);
+  $("#modalClose").click();
+  await wait(120);
+  out.sheetClosed = $("#modal").hidden;
+
+  // a title that is not in the library shows the add-files CTA
+  win.location.hash = "#/anime/11061";
+  await until(() => !$("#modal").hidden, "other detail");
+  await wait(300);
+  out.cta = {
+    empty: !!$("#mEps .se-empty"),
+    buttons: $$("#mEps .se-btns .btn").map((b) => b.textContent.trim()),
+  };
+  $("#modalClose").click();
+  await wait(100);
+
   // filename parser check via a fresh set
   const weird = [
     new win.File([new Uint8Array(512)], "Demon Slayer Season 2 - 07.mkv"),

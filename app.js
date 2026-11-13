@@ -497,6 +497,7 @@
 
     $('#mDesc').textContent = stripHtml(m.description) || 'No synopsis available yet.';
     $('#mFacts').innerHTML = factsFor(m);
+    renderSheetEpisodes(m);
 
     const cr = $('#mCrunchy');
     cr.href = 'https://www.crunchyroll.com/search?q=' + encodeURIComponent(titleOf(m));
@@ -515,6 +516,105 @@
 
     if (!skipHash) setHash('#/anime/' + m.id);
     $('#modalClose').focus({ preventScroll: true });
+  }
+
+  /* ---------------- episodes inside the detail sheet ---------------- */
+  const pad2 = (n) => String(n).padStart(2, '0');
+
+  function renderSheetEpisodes(m) {
+    const box = $('#mEps');
+    if (!box) return;
+    box.innerHTML = '';
+    const L = window.AniVerseLib;
+    if (!L) return;
+
+    const s = L.matchFor(m);
+    const head = el('div', 'se-head');
+    head.appendChild(el('h3', null, 'Episodes'));
+    head.appendChild(el('span', 'se-sub',
+      s ? s.episodes.length + ' episodes in your library' : 'not in your library yet'));
+    box.appendChild(head);
+
+    if (!s) {
+      const empty = el('div', 'se-empty');
+      empty.innerHTML =
+        '<b>Yahan se episode chalane ke liye files chahiye</b>' +
+        '<p>AniVerse koi stream host nahi karta. Apne episodes ka folder chuno — phir isi card se direct play hoga, ' +
+        'subtitles + resume + auto-next ke saath.</p>';
+      const btns = el('div', 'se-btns');
+      const b1 = el('button', 'btn small primary', '📁 Folder chuno');
+      b1.type = 'button';
+      b1.addEventListener('click', () => L.pickFolder());
+      const b2 = el('button', 'btn small glass', '🎬 Files chuno');
+      b2.type = 'button';
+      b2.addEventListener('click', () => L.pickFiles());
+      const b3 = el('button', 'btn small ghost', 'Library kholo');
+      b3.type = 'button';
+      b3.addEventListener('click', () => { closeDetail(true); L.open(); });
+      btns.appendChild(b1);
+      btns.appendChild(b2);
+      btns.appendChild(b3);
+      empty.appendChild(btns);
+      box.appendChild(empty);
+      return;
+    }
+
+    const eps = s.episodes.slice().sort((a, b) => {
+      if (a.num != null && b.num != null && a.num !== b.num) return a.num - b.num;
+      return a.name.localeCompare(b.name, undefined, { numeric: true });
+    });
+
+    // resume target
+    let resume = null;
+    for (const ep of eps) {
+      const p = L.progressFor(s.id, ep.idx);
+      if (!p || !p.d || p.t < p.d * 0.92) { resume = ep; break; }
+    }
+    const pos = L.progressFor(s.id, (resume || eps[0]).idx);
+
+    const top = el('div', 'se-top');
+    const play = el('button', 'btn small primary',
+      '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>' +
+      (pos && pos.t > 20 ? 'Resume · ' + fmtTimeSpring(pos.t) : 'Play'));
+    play.type = 'button';
+    play.addEventListener('click', () => L.playEpisodeById(s.id, (resume || eps[0]).idx));
+    top.appendChild(play);
+
+    const open = el('button', 'btn small glass', 'Series page →');
+    open.type = 'button';
+    open.addEventListener('click', () => { closeDetail(true); L.openSeries(s.id); });
+    top.appendChild(open);
+    box.appendChild(top);
+
+    const list = el('div', 'se-list');
+    eps.slice(0, 40).forEach((ep, i) => {
+      const p = L.progressFor(s.id, ep.idx);
+      const pct = p && p.d ? Math.min(100, Math.round((p.t / p.d) * 100)) : 0;
+      const row = el('button', 'se-ep');
+      row.type = 'button';
+      row.innerHTML =
+        '<span class="se-n">' + pad2(ep.num != null ? ep.num : i + 1) + '</span>' +
+        '<span class="se-t">' + esc(ep.num != null ? 'Episode ' + ep.num : ep.label) + '</span>' +
+        '<span class="se-p">' + (pct ? pct + '%' : '▶') + '</span>';
+      if (pct) {
+        const bar = el('span', 'se-bar');
+        bar.style.width = pct + '%';
+        row.appendChild(bar);
+      }
+      row.addEventListener('click', () => L.playEpisodeById(s.id, ep.idx));
+      list.appendChild(row);
+    });
+    box.appendChild(list);
+
+    if (eps.length > 40) {
+      box.appendChild(el('p', 'se-more', '+' + (eps.length - 40) + ' more on the series page'));
+    }
+  }
+
+  function fmtTimeSpring(t) {
+    t = Math.max(0, Math.floor(t || 0));
+    const h = Math.floor(t / 3600), m = Math.floor((t % 3600) / 60), s = t % 60;
+    return (h ? h + ':' + String(m).padStart(2, '0') : m) + ':' + String(s).padStart(2, '0');
   }
 
   function closeDetail(fromHash) {
@@ -753,6 +853,10 @@
     browseState = null;
     syncScrollLock();
   }
+
+  document.addEventListener('av:library-changed', () => {
+    if (currentDetail && !$('#modal').hidden) renderSheetEpisodes(currentDetail);
+  });
 
   window.addEventListener('hashchange', () => applyHash().catch(() => {}));
 

@@ -175,6 +175,9 @@
   let scanBusy = false;
 
   const seriesById = (id) => series.find((s) => s.id === id);
+  const notify = () => {
+    try { document.dispatchEvent(new CustomEvent('av:library-changed')); } catch (e) {}
+  };
 
   /* =========================================================
      AniList poster matching (background, cached)
@@ -294,6 +297,7 @@
             if (oldPoster && fresh) oldPoster.replaceWith(fresh);
           }
           if (currentSeries === s) renderSeries();
+          notify();
         }
       } catch (e) { /* offline — keep placeholder */ }
       await new Promise((r) => setTimeout(r, 900));
@@ -387,6 +391,7 @@
     series.sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true }));
     indexOnly = series.some((s) => !!s.offline);
     persistIndex();
+    notify();
     return added;
   }
 
@@ -1152,10 +1157,6 @@
   function renderContinueRow() {
     let row = $('#libRow');
     const items = continueItems();
-    if (!items.length) {
-      if (row) row.remove();
-      return;
-    }
     const rows = $('#rows');
     if (!rows) return;
     if (!row) {
@@ -1166,13 +1167,32 @@
     }
     row.innerHTML = '';
     const head = el('div', 'row-head');
-    const left = el('div', 'row-title', 'Continue watching <span class="row-sub">from your library</span>');
+    const left = el('div', 'row-title', 'Continue watching <span class="row-sub">' +
+      (items.length ? 'from your library' : 'episodes you own') + '</span>');
     head.appendChild(left);
     const link = el('button', 'row-link', 'Library →');
     link.type = 'button';
     link.addEventListener('click', () => openLibrary());
     head.appendChild(link);
     row.appendChild(head);
+
+    if (!items.length) {
+      const empty = el('div', 'lib-cw-empty');
+      const txt = el('div', 'lib-cw-txt');
+      txt.innerHTML = '<b>Abhi kuch nahi dekh rahe</b>' +
+        '<span>Apne anime ka folder add karo — episodes yahin se play honge, jahan chhoda wahin se resume.</span>';
+      empty.appendChild(txt);
+      const b = el('button', 'btn small primary', '📁 Folder chuno');
+      b.type = 'button';
+      b.addEventListener('click', pickFolder);
+      empty.appendChild(b);
+      const b2 = el('button', 'btn small glass', '🎬 Files');
+      b2.type = 'button';
+      b2.addEventListener('click', pickFiles);
+      empty.appendChild(b2);
+      row.appendChild(empty);
+      return;
+    }
 
     const wrap = el('div', 'row-wrap');
     const scroll = el('div', 'row-scroll');
@@ -1242,11 +1262,61 @@
     // restore saved index immediately so the UI is never empty
     restoreIndexOnly();
     applyLibHash();
+    renderContinueRow();
+    notify();
     reconnect(false).then(() => {
       applyLibHash();
       renderAll();
     }).catch(() => {});
   }
+
+  /* =========================================================
+     public API (used by app.js detail sheet)
+     ========================================================= */
+  function matchFor(media) {
+    if (!media) return null;
+    if (media.id != null) {
+      const byId = series.find((s) => s.alId === media.id);
+      if (byId) return byId;
+    }
+    const t = media.title ? (media.title.english || media.title.romaji || '') : '';
+    if (!t) return null;
+    const nt = slug(t);
+    if (!nt) return null;
+    const exact = series.find((s) => slug(s.title) === nt);
+    if (exact) return exact;
+    const loose = series.find((s) => {
+      const ns = slug(s.title);
+      return ns && nt && (ns.includes(nt) || nt.includes(ns)) &&
+        Math.min(ns.length, nt.length) / Math.max(ns.length, nt.length) > 0.6;
+    });
+    return loose || null;
+  }
+
+  window.AniVerseLib = {
+    matchFor: matchFor,
+    playEpisodeById: function (seriesId, epIdx) {
+      const s = seriesById(seriesId);
+      if (!s) return false;
+      if (s.offline) { toast('Files reconnect karo pehle'); return false; }
+      playEpisode(s, epIdx, { resume: true });
+      return true;
+    },
+    openSeries: function (seriesId) {
+      const s = seriesById(seriesId);
+      if (!s) return false;
+      openLibrary(true);
+      openSeries(s, true);
+      return true;
+    },
+    progressFor: function (seriesId, epIdx) { return getPos()[seriesId + '|' + epIdx] || null; },
+    pickFolder: pickFolder,
+    pickFiles: pickFiles,
+    open: function () { openLibrary(); },
+    count: function () { return series.length; },
+    isReady: true
+  };
+  notify();
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();

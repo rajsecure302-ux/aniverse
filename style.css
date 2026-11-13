@@ -674,3 +674,52 @@ kbd{
 }
 .lib-legal a{color:#bcc6db;border-bottom:1px solid rgba(255,255,255,.2)}
 .lib-legal a:hover{color:#fff}
+
+/* =========================================================
+   episodes inside the detail sheet
+   ========================================================= */
+.sheet-eps{margin-top:22px;padding-top:18px;border-top:1px solid var(--line)}
+.se-head{display:flex;align-items:baseline;gap:10px;margin-bottom:11px}
+.se-head h3{font-size:14px;font-weight:800;letter-spacing:.02em;color:#dfe5f2}
+.se-sub{font-size:11.8px;font-weight:500;color:#6f7890}
+.se-empty{
+  padding:15px 16px;border-radius:13px;
+  background:linear-gradient(150deg,rgba(255,46,99,.07),rgba(124,92,255,.05));
+  border:1px solid rgba(255,46,99,.2);
+}
+.se-empty b{font-size:13.5px;font-weight:700;color:#f0e6ea}
+.se-empty p{margin-top:6px;font-size:12.6px;line-height:1.6;color:#a5aec2}
+.se-btns{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.se-top{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.se-list{display:grid;gap:6px;max-height:300px;overflow:auto;padding-right:2px}
+.se-ep{
+  position:relative;overflow:hidden;display:flex;align-items:center;gap:11px;
+  width:100%;padding:9px 11px;border-radius:10px;text-align:left;color:inherit;
+  background:rgba(255,255,255,.035);border:1px solid var(--line);
+  transition:background .15s,border-color .15s;
+}
+.se-ep:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.18)}
+.se-n{
+  flex:none;width:30px;height:30px;border-radius:8px;display:grid;place-items:center;
+  font:800 11.5px/1 Inter,sans-serif;color:#ffb3c6;font-variant-numeric:tabular-nums;
+  background:rgba(255,46,99,.12);border:1px solid rgba(255,46,99,.24);
+}
+.se-t{flex:1;min-width:0;font-size:12.8px;font-weight:600;color:#e2e8f4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.se-p{flex:none;font-size:11.5px;font-weight:700;color:#97a2b8}
+.se-bar{position:absolute;left:0;bottom:0;height:2px;background:linear-gradient(90deg,var(--acc),var(--acc2))}
+.se-more{margin-top:8px;font-size:11.8px;color:#6f7890}
+
+/* continue watching — empty state card */
+.lib-cw-empty{
+  display:flex;align-items:center;gap:14px;flex-wrap:wrap;
+  padding:16px 18px;border-radius:14px;
+  background:rgba(255,255,255,.028);
+  border:1px dashed rgba(255,255,255,.16);
+}
+.lib-cw-txt{flex:1;min-width:180px;display:flex;flex-direction:column;gap:4px}
+.lib-cw-txt b{font-size:13.5px;font-weight:700;color:#e4e9f3}
+.lib-cw-txt span{font-size:12.4px;line-height:1.55;color:#8c95ab}
+@media (max-width:720px){
+  .se-list{max-height:230px}
+  .se-head h3{font-size:13px}
+}
