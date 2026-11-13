@@ -357,6 +357,7 @@
         // replace episodes, keep metadata
         existing.episodes = g.episodes;
         existing.addedAt = g.addedAt;
+        existing.offline = false;
         g.episodes.forEach((ep) => fileMap.set(g.id + '|' + ep.idx, ep.file));
         added += g.episodes.length;
       } else {
@@ -384,6 +385,7 @@
     });
 
     series.sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true }));
+    indexOnly = series.some((s) => !!s.offline);
     persistIndex();
     return added;
   }
