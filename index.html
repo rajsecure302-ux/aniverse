@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#07080d">
+<title>AniVerse — anime, trailers &amp; your list</title>
+<meta name="description" content="Browse trending anime, watch official trailers, build a watchlist and play your own video files. Data by AniList.">
+<link rel="preconnect" href="https://s4.anilist.co" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230a0b12'/%3E%3Cpath d='M20 18h24v6H35v18h9v6H20v-6h9V24h-9z' fill='%23ff2e63'/%3E%3Cpath d='M44 18l6 6-6 6z' fill='%23ff8a3d'/%3E%3C/svg%3E">
+</head>
+<body>
+
+<div id="loadbar" class="loadbar" aria-hidden="true"></div>
+
+<header class="topbar" id="topbar">
+  <a class="brand" href="#/" aria-label="AniVerse home">
+    <svg class="logo" viewBox="0 0 64 64" aria-hidden="true">
+      <rect width="64" height="64" rx="17" fill="url(#lg)"/>
+      <path d="M21 17h22v7H36v16h7v7H21v-7h7V24h-7z" fill="#fff"/>
+      <path d="M45 17l6 6.5-6 6.5z" fill="#ffd166"/>
+      <defs>
+        <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#ff2e63"/><stop offset="1" stop-color="#7c5cff"/>
+        </linearGradient>
+      </defs>
+    </svg>
+    <span class="brand-txt">Ani<b>Verse</b></span>
+  </a>
+
+  <nav class="nav" aria-label="Main">
+    <a href="#/" data-nav="home" class="nav-link active">Home</a>
+    <a href="#/browse/top" data-nav="top" class="nav-link">Top rated</a>
+    <a href="#/browse/movies" data-nav="movies" class="nav-link">Movies</a>
+    <a href="#/mylist" data-nav="list" class="nav-link">My list</a>
+  </nav>
+
+  <div class="search" role="search">
+    <svg class="s-ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
+    <input id="searchInput" type="search" placeholder="Search anime…" autocomplete="off" spellcheck="false" aria-label="Search anime">
+    <button id="searchClear" class="s-clear" hidden aria-label="Clear search">✕</button>
+  </div>
+
+  <div class="tools">
+    <button id="btnRandom" class="icon-btn" title="Surprise me" aria-label="Random anime">✦</button>
+    <button id="btnLocal" class="btn small" title="Play a video from this device">
+      <svg viewBox="0 0 24 24" aria-hidden="true" class="i">
+        <rect x="3" y="6" width="18" height="12" rx="2.5"/>
+        <path d="M10.5 9.4l4.4 2.6-4.4 2.6z" fill="currentColor" stroke="none"/>
+      </svg>
+      <span>Local video</span>
+    </button>
+  </div>
+
+  <input id="fileInput" type="file" accept="video/*" multiple hidden>
+</header>
+
+<div id="searchPanel" class="search-panel" hidden></div>
+
+<main id="main">
+
+  <section class="hero" id="hero" aria-label="Featured anime">
+    <div class="hero-bg">
+      <img id="heroImg" alt="" fetchpriority="high">
+      <div class="hero-shade"></div>
+    </div>
+    <div class="hero-content">
+      <div class="hero-badge" id="heroBadge">Trending #1</div>
+      <h1 id="heroTitle">Loading…</h1>
+      <div class="hero-meta" id="heroMeta"></div>
+      <p class="hero-desc" id="heroDesc"></p>
+      <div class="hero-actions">
+        <button class="btn primary" id="heroTrailer">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>
+          Watch trailer
+        </button>
+        <button class="btn glass" id="heroList">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+          <span>My list</span>
+        </button>
+        <button class="btn glass" id="heroMore">Details</button>
+      </div>
+      <div class="hero-dots" id="heroDots"></div>
+    </div>
+  </section>
+
+  <div id="rows" class="rows"></div>
+
+  <footer class="footer">
+    <div class="foot-in">
+      <div class="foot-brand">Ani<b>Verse</b></div>
+      <p>Metadata &amp; artwork by <a href="https://anilist.co" target="_blank" rel="noopener">AniList</a>. Trailers are official YouTube videos.
+         Built for personal use — it does not host or stream any anime. Play files you own with <b>Local video</b>.</p>
+      <p class="tiny">Tip: press <kbd>/</kbd> to search · <kbd>Esc</kbd> to close · <kbd>F</kbd> fullscreen in the player</p>
+    </div>
+  </footer>
+</main>
+
+<!-- ============ detail modal ============ -->
+<div id="modal" class="modal" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-label="Anime details">
+    <button class="x" id="modalClose" aria-label="Close">✕</button>
+    <div class="sheet-hero"><img id="mBanner" alt=""><div class="fade"></div></div>
+    <div class="sheet-body">
+      <img id="mCover" class="sheet-cover" alt="">
+      <div class="sheet-info">
+        <h2 id="mTitle">—</h2>
+        <div class="chips" id="mChips"></div>
+        <p class="desc" id="mDesc"></p>
+        <div class="actions">
+          <button class="btn primary" id="mTrailer">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>
+            Watch trailer
+          </button>
+          <button class="btn glass" id="mList"><span>+ My list</span></button>
+          <a class="btn glass" id="mAniList" target="_blank" rel="noopener">AniList ↗</a>
+          <a class="btn ghost" id="mCrunchy" target="_blank" rel="noopener">Find on Crunchyroll ↗</a>
+        </div>
+        <dl class="facts" id="mFacts"></dl>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ browse overlay ============ -->
+<div id="browse" class="browse" hidden>
+  <div class="browse-head">
+    <button class="icon-btn" id="browseBack" aria-label="Back">←</button>
+    <h2 id="browseTitle">Browse</h2>
+    <span class="browse-sub" id="browseSub"></span>
+  </div>
+  <div class="grid" id="browseGrid"></div>
+  <div class="browse-foot"><button class="btn glass" id="browseMore">Load more</button></div>
+</div>
+
+<!-- ============ trailer lightbox ============ -->
+<div id="trailer" class="trailer" hidden>
+  <button class="x" id="trailerClose" aria-label="Close">✕</button>
+  <div class="frame" id="trailerFrame"></div>
+</div>
+
+<!-- ============ local player ============ -->
+<div id="player" class="player" hidden>
+  <video id="video" playsinline preload="metadata"></video>
+  <div class="p-top">
+    <button class="icon-btn" id="pClose" aria-label="Close player">←</button>
+    <span id="pName" class="p-name"></span>
+    <span class="p-badge">LOCAL</span>
+  </div>
+  <div class="p-center"><button class="p-big" id="pBig" aria-label="Play / pause">▶</button></div>
+  <div class="p-controls" id="pControls">
+    <input id="pSeek" class="p-seek" type="range" min="0" max="1000" value="0" step="1" aria-label="Seek">
+    <div class="p-row">
+      <button class="icon-btn" id="pPlay" aria-label="Play / pause">▶</button>
+      <button class="icon-btn" id="pBack" aria-label="Back 10 seconds">−10</button>
+      <button class="icon-btn" id="pFwd" aria-label="Forward 10 seconds">+10</button>
+      <span class="p-time"><span id="pCur">0:00</span> / <span id="pDur">0:00</span></span>
+      <span class="p-spacer"></span>
+      <button class="icon-btn" id="pMute" aria-label="Mute">🔊</button>
+      <input id="pVol" class="p-vol" type="range" min="0" max="1" step="0.02" value="1" aria-label="Volume">
+      <button class="icon-btn" id="pSpeed" aria-label="Playback speed">1×</button>
+      <button class="icon-btn" id="pFull" aria-label="Fullscreen">⛶</button>
+    </div>
+  </div>
+  <div class="p-toast" id="pToast"></div>
+</div>
+
+<div id="toasts" class="toasts" aria-live="polite"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
