@@ -37,6 +37,7 @@
     <a href="#/browse/top" data-nav="top" class="nav-link">Top rated</a>
     <a href="#/browse/movies" data-nav="movies" class="nav-link">Movies</a>
     <a href="#/mylist" data-nav="list" class="nav-link">My list</a>
+    <a href="#/library" data-nav="library" class="nav-link">Library</a>
   </nav>
 
   <div class="search" role="search">
@@ -47,16 +48,18 @@
 
   <div class="tools">
     <button id="btnRandom" class="icon-btn" title="Surprise me" aria-label="Random anime">✦</button>
-    <button id="btnLocal" class="btn small" title="Play a video from this device">
+    <button id="btnLocal" class="btn small" title="My anime library">
       <svg viewBox="0 0 24 24" aria-hidden="true" class="i">
         <rect x="3" y="6" width="18" height="12" rx="2.5"/>
         <path d="M10.5 9.4l4.4 2.6-4.4 2.6z" fill="currentColor" stroke="none"/>
       </svg>
-      <span>Local video</span>
+      <span>Library</span>
     </button>
   </div>
 
   <input id="fileInput" type="file" accept="video/*" multiple hidden>
+  <input id="libDirInput" type="file" webkitdirectory directory multiple hidden>
+  <input id="libFileInput" type="file" accept="video/*,.srt,.vtt" multiple hidden>
 </header>
 
 <div id="searchPanel" class="search-panel" hidden></div>
@@ -94,7 +97,7 @@
     <div class="foot-in">
       <div class="foot-brand">Ani<b>Verse</b></div>
       <p>Metadata &amp; artwork by <a href="https://anilist.co" target="_blank" rel="noopener">AniList</a>. Trailers are official YouTube videos.
-         Built for personal use — it does not host or stream any anime. Play files you own with <b>Local video</b>.</p>
+         Built for personal use — it does not host or stream any anime. Your own files play in <b>My library</b>.</p>
       <p class="tiny">Tip: press <kbd>/</kbd> to search · <kbd>Esc</kbd> to close · <kbd>F</kbd> fullscreen in the player</p>
     </div>
   </footer>
@@ -119,7 +122,7 @@
           <button class="btn glass" id="mList"><span>+ My list</span></button>
           <a class="btn glass" id="mAniList" target="_blank" rel="noopener">AniList ↗</a>
           <a class="btn ghost" id="mCrunchy" target="_blank" rel="noopener">Crunchyroll ↗</a>
-          <a class="btn ghost" id="mFree" target="_blank" rel="noopener">Free episodes ↗</a>
+          <a class="btn ghost" id="mFree" target="_blank" rel="noopener">Where to watch ↗</a>
         </div>
         <dl class="facts" id="mFacts"></dl>
       </div>
@@ -170,10 +173,67 @@
   <div class="p-toast" id="pToast"></div>
 </div>
 
+<!-- ============ library ============ -->
+<div id="library" class="browse libview" hidden>
+  <div class="browse-head lib-head">
+    <button class="icon-btn" id="libClose" aria-label="Back to home">←</button>
+    <h2 id="libTitle">My library</h2>
+    <span class="browse-sub" id="libSub"></span>
+    <div class="lib-tools">
+      <div class="lib-search">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
+        <input id="libSearch" type="search" placeholder="Search library…" autocomplete="off" aria-label="Search library">
+      </div>
+      <button class="btn small glass" id="libAddFolder" title="Add a folder">＋ Folder</button>
+      <button class="btn small glass" id="libAddFiles" title="Add video files">＋ Files</button>
+    </div>
+  </div>
+  <div id="libBody"></div>
+</div>
+
+<!-- ============ library player ============ -->
+<div id="libPlayer" class="player" hidden>
+  <video id="lvVideo" playsinline preload="metadata"></video>
+  <div class="p-top">
+    <button class="icon-btn" id="lvClose" aria-label="Close player">←</button>
+    <span id="lvName" class="p-name"></span>
+    <span class="p-badge">LIBRARY</span>
+  </div>
+  <div class="p-center"><button class="p-big" id="lvBig" aria-label="Play / pause">▶</button></div>
+  <div class="p-controls">
+    <input id="lvSeek" class="p-seek" type="range" min="0" max="1000" value="0" step="1" aria-label="Seek">
+    <div class="p-row">
+      <button class="icon-btn" id="lvPlay" aria-label="Play / pause">▶</button>
+      <button class="icon-btn" id="lvBack10" aria-label="Back 10 seconds">−10</button>
+      <button class="icon-btn" id="lvFwd10" aria-label="Forward 10 seconds">+10</button>
+      <span class="p-time"><span id="lvCur">0:00</span> / <span id="lvDur">0:00</span></span>
+      <span class="p-spacer"></span>
+      <button class="icon-btn" id="lvMute" aria-label="Mute">🔊</button>
+      <input id="lvVol" class="p-vol" type="range" min="0" max="1" step="0.02" value="1" aria-label="Volume">
+      <button class="icon-btn" id="lvSub" aria-label="Subtitles" title="Subtitles">CC</button>
+      <button class="icon-btn" id="lvSpeed" aria-label="Playback speed">1×</button>
+      <button class="icon-btn" id="lvPip" aria-label="Picture in picture" title="Picture in picture">⧉</button>
+      <button class="icon-btn" id="lvFull" aria-label="Fullscreen">⛶</button>
+    </div>
+  </div>
+  <div class="lv-next" id="lvNext" hidden>
+    <div class="lv-next-card">
+      <b>Next episode</b>
+      <span id="lvNextIn">Next episode in 6s</span>
+      <div class="lv-next-btns">
+        <button class="btn primary" id="lvNextBtn" type="button">Play now</button>
+        <button class="btn glass" id="lvNextCancel" type="button">Cancel</button>
+      </div>
+    </div>
+  </div>
+  <div class="p-toast" id="lvToast"></div>
+</div>
+
 <div id="toasts" class="toasts" aria-live="polite"></div>
 
 <noscript><p style="padding:24px;text-align:center;color:#98a1b5">AniVerse needs JavaScript to load anime data.</p></noscript>
 
 <script src="app.js"></script>
+<script src="library.js"></script>
 </body>
 </html>

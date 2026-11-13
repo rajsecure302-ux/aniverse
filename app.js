@@ -500,8 +500,7 @@
 
     const cr = $('#mCrunchy');
     cr.href = 'https://www.crunchyroll.com/search?q=' + encodeURIComponent(titleOf(m));
-    $('#mFree').href = 'https://www.youtube.com/results?search_query=' +
-      encodeURIComponent(titleOf(m) + ' Muse Asia episode');
+    $('#mFree').href = 'https://www.justwatch.com/in/search?q=' + encodeURIComponent(titleOf(m));
     $('#mAniList').href = m.siteUrl || ('https://anilist.co/anime/' + m.id);
 
     const trBtn = $('#mTrailer');
@@ -956,8 +955,8 @@
   });
 
   /* ---------------- file picker ---------------- */
-  $('#btnLocal').addEventListener('click', () => $('#fileInput').click());
-  $('#fileInput').addEventListener('change', (e) => {
+  $('#btnLocal').addEventListener('click', () => document.dispatchEvent(new CustomEvent('av:library')));
+  if ($('#fileInput')) $('#fileInput').addEventListener('change', (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length) openPlayer(files);
     e.target.value = '';
