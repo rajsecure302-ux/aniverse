@@ -89,9 +89,29 @@ try {
   out.hasSubBtn = !!$("#lvSub");
   out.subEnabled = !$("#lvSub").disabled; // srt matched to Jujutsu Kaisen - 01
 
+  // gestures: single tap toggles controls, double-tap right/left seeks
+  const v = $("#lvVideo");
+  Object.defineProperty(v, "duration", { value: 1440, configurable: true });
+  Object.defineProperty(v, "currentTime", { value: 600, configurable: true, writable: true });
+  v.getBoundingClientRect = () => ({ left: 0, top: 0, width: 1000, height: 560, right: 1000, bottom: 560 });
+
+  v.dispatchEvent(new win.MouseEvent("click", { bubbles: true, clientX: 500 }));
+  await wait(320);
+  out.tapHidesControls = $("#libPlayer").classList.contains("idle");
+  v.dispatchEvent(new win.MouseEvent("click", { bubbles: true, clientX: 500 }));
+  await wait(320);
+  out.tapShowsControls = !$("#libPlayer").classList.contains("idle");
+
+  v.dispatchEvent(new win.MouseEvent("dblclick", { bubbles: true, clientX: 900 }));
+  await wait(60);
+  out.seekForward = v.currentTime;
+  v.dispatchEvent(new win.MouseEvent("dblclick", { bubbles: true, clientX: 60 }));
+  await wait(60);
+  out.seekBack = v.currentTime;
+  out.seekHint = !!$(".seek-hint");
+
   // next episode
   out.nextQueue = true;
-  const v = $("#lvVideo");
   v.dispatchEvent(new win.Event("ended"));
   await wait(120);
   out.nextOverlay = !$("#lvNext").hidden;
