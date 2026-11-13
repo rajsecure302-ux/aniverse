@@ -1,7 +1,7 @@
 /* Library smoke test: indexing, grouping, series view, player (jsdom). */
 import { JSDOM, VirtualConsole } from "jsdom";
 
-const BASE = "http://127.0.0.1:8080/";
+const BASE = process.env.BASE || "http://127.0.0.1:8080/";
 const errors = [];
 const vc = new VirtualConsole();
 vc.on("jsdomError", (e) => errors.push("jsdom: " + (e.message || e)));
