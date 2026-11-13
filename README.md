@@ -13,7 +13,7 @@ No build step, no framework, no tracking. Just `index.html`, `style.css`, `app.j
 - **Trending / This season / Top rated / Movies** rows, all live from [AniList](https://anilist.co).
 - **Hero carousel** with banners, score, genres, synopsis and trailer button.
 - **Search** (`/` shortcut) with debounced live results.
-- **Detail sheet** — synopsis, facts, studios, genres, trailer, AniList link, Crunchyroll search link.
+- **Detail sheet** — synopsis, facts, studios, genres, trailer, AniList link, Crunchyroll search link, and **official per-episode links** straight from AniList (`streamingEpisodes`).
 - **My list** — saved in `localStorage`, shows up as its own row.
 - **Browse view** with paging ("Load more") for every row.
 - **My library** — point it at a folder of episodes and it builds a poster grid, matched to AniList artwork. Series → episode list → player, with subtitles, auto-next, resume and a *Continue watching* row.

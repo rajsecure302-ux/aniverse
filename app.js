@@ -49,7 +49,8 @@
     movies: `query($page:Int,$perPage:Int){Page(page:$page,perPage:$perPage){media(type:ANIME,isAdult:false,format:MOVIE,sort:POPULARITY_DESC){${FIELDS}}}}`,
     seasonal: `query($season:MediaSeason,$year:Int,$page:Int,$perPage:Int){Page(page:$page,perPage:$perPage){media(type:ANIME,isAdult:false,season:$season,seasonYear:$year,sort:POPULARITY_DESC){${FIELDS}}}}`,
     search: `query($q:String,$page:Int,$perPage:Int){Page(page:$page,perPage:$perPage){media(type:ANIME,isAdult:false,search:$q,sort:SEARCH_MATCH){${FIELDS}}}}`,
-    byId: `query($id:Int){Media(id:$id,type:ANIME){${FIELDS}}}`
+    byId: `query($id:Int){Media(id:$id,type:ANIME){${FIELDS}}}`,
+    stream: `query($id:Int){Media(id:$id,type:ANIME){streamingEpisodes{title thumbnail url site}}}`
   };
 
   /* ---------------- pretty labels ---------------- */
@@ -498,6 +499,7 @@
     $('#mDesc').textContent = stripHtml(m.description) || 'No synopsis available yet.';
     $('#mFacts').innerHTML = factsFor(m);
     renderSheetEpisodes(m);
+    loadStreamingEpisodes(m);
 
     const cr = $('#mCrunchy');
     cr.href = 'https://www.crunchyroll.com/search?q=' + encodeURIComponent(titleOf(m));
@@ -521,6 +523,54 @@
   /* ---------------- episodes inside the detail sheet ---------------- */
   const pad2 = (n) => String(n).padStart(2, '0');
 
+  /* Legal per-episode links come from AniList's streamingEpisodes field.
+     They open the official platform (Crunchyroll etc.) — AniVerse never
+     hosts or proxies the video itself. */
+  function loadStreamingEpisodes(m) {
+    if (!m || m._streamLoading || (m.streamingEpisodes && m.streamingEpisodes.length)) return;
+    m._streamLoading = true;
+    gql(Q.stream, { id: m.id }).then((d) => {
+      const list = (d && d.Media && d.Media.streamingEpisodes) || [];
+      m.streamingEpisodes = list;
+      m._streamLoading = false;
+      if (currentDetail === m && !$('#modal').hidden) renderSheetEpisodes(m);
+    }).catch(() => { m._streamLoading = false; });
+  }
+
+  function epNumber(title, i) {
+    const m = String(title || '').match(/(?:episode|ep\.?|#)\s*(\d{1,4})/i);
+    return m ? Number(m[1]) : i + 1;
+  }
+
+  function legalEpisodesBlock(list) {
+    const wrap = el('div', 'se-legal-wrap');
+    const note = el('p', 'se-legal-note',
+      'Yeh official platform pe khulenge — playback wahan hoga, AniVerse stream host nahi karta.');
+    wrap.appendChild(note);
+    const rows = el('div', 'se-list se-legal-list');
+    list.slice(0, 40).forEach((x, i) => {
+      const a = el('a', 'se-ep se-legal');
+      a.href = x.url;
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      const n = epNumber(x.title, i);
+      a.innerHTML =
+        '<span class="se-n">' + pad2(n) + '</span>' +
+        '<span class="se-t">' + esc(x.title || ('Episode ' + n)) + '</span>' +
+        '<span class="se-p se-site">' + esc(x.site || 'Watch') + ' ↗</span>';
+      rows.appendChild(a);
+    });
+    wrap.appendChild(rows);
+    if (list.length > 40) {
+      const a = el('a', 'se-more', '+' + (list.length - 40) + ' more on ' + (list[0].site || 'the platform') + ' ↗');
+      a.href = list[0].url || '#';
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      wrap.appendChild(a);
+    }
+    return wrap;
+  }
+
   function renderSheetEpisodes(m) {
     const box = $('#mEps');
     if (!box) return;
@@ -529,18 +579,25 @@
     if (!L) return;
 
     const s = L.matchFor(m);
+    const legal = (m.streamingEpisodes || []).filter((x) => x && x.url);
     const head = el('div', 'se-head');
     head.appendChild(el('h3', null, 'Episodes'));
     head.appendChild(el('span', 'se-sub',
-      s ? s.episodes.length + ' episodes in your library' : 'not in your library yet'));
+      s ? s.episodes.length + ' episodes in your library'
+        : legal.length ? legal.length + ' official episodes · ' + (legal[0].site || 'legal stream')
+        : (m._streamLoading ? 'loading official links…' : 'not in your library yet')));
     box.appendChild(head);
 
     if (!s) {
+      if (legal.length) box.appendChild(legalEpisodesBlock(legal));
       const empty = el('div', 'se-empty');
       empty.innerHTML =
-        '<b>Yahan se episode chalane ke liye files chahiye</b>' +
-        '<p>AniVerse koi stream host nahi karta. Apne episodes ka folder chuno — phir isi card se direct play hoga, ' +
-        'subtitles + resume + auto-next ke saath.</p>';
+        '<b>' + (legal.length ? 'Site ke andar play karne ke liye apni file chahiye' : 'Yahan se episode chalane ke liye files chahiye') + '</b>' +
+        '<p>' + (legal.length
+          ? 'Upar wale links official platform pe kholenge. AniVerse ke player me chalane ke liye apne episodes ka folder chuno — ' +
+            'phir isi card se direct play hoga, subtitles + resume + auto-next ke saath.'
+          : 'AniVerse koi stream host nahi karta. Apne episodes ka folder chuno — phir isi card se direct play hoga, ' +
+            'subtitles + resume + auto-next ke saath.') + '</p>';
       const btns = el('div', 'se-btns');
       const b1 = el('button', 'btn small primary', '📁 Folder chuno');
       b1.type = 'button';

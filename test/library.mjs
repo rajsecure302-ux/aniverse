@@ -167,6 +167,15 @@ try {
     empty: !!$("#mEps .se-empty"),
     buttons: $$("#mEps .se-btns .btn").map((b) => b.textContent.trim()),
   };
+
+  // official per-episode links from AniList streamingEpisodes
+  await until(() => $$("#mEps .se-legal").length > 0, "legal episode links", 30000);
+  out.legal = {
+    count: $$("#mEps .se-legal").length,
+    firstHref: $("#mEps .se-legal").getAttribute("href"),
+    firstText: $("#mEps .se-legal").textContent.trim().slice(0, 50),
+    sub: $("#mEps .se-sub").textContent.trim(),
+  };
   $("#modalClose").click();
   await wait(100);
 
