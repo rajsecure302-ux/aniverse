@@ -500,6 +500,8 @@
 
     const cr = $('#mCrunchy');
     cr.href = 'https://www.crunchyroll.com/search?q=' + encodeURIComponent(titleOf(m));
+    $('#mFree').href = 'https://www.youtube.com/results?search_query=' +
+      encodeURIComponent(titleOf(m) + ' Muse Asia episode');
     $('#mAniList').href = m.siteUrl || ('https://anilist.co/anime/' + m.id);
 
     const trBtn = $('#mTrailer');
