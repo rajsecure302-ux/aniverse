@@ -44,6 +44,7 @@
      storage
      ========================================================= */
   const IDX_KEY = 'av:libidx';      // series index (no file data)
+  const URLLIB_KEY = 'av:liburls';  // direct-link series (mp4/webm/m3u8)
   const POS_KEY = 'av:libpos';      // watch progress
   const META_KEY = 'av:lmeta:';     // AniList match cache
 
@@ -408,6 +409,98 @@
   }
 
   /* =========================================================
+     direct links: user's own legal mp4 / webm / m3u8 URLs
+     ========================================================= */
+  function persistLinks() {
+    const out = series.filter((s) => s.link).map((s) => ({
+      id: s.id, title: s.title, season: s.season, addedAt: s.addedAt,
+      cadence: s.cadence,
+      episodes: s.episodes.map((e) => ({
+        name: e.name, label: e.label, num: e.num, idx: e.idx,
+        url: e.url, size: e.size || 0
+      }))
+    }));
+    writeJSON(URLLIB_KEY, out);
+  }
+
+  function loadLinks() {
+    const saved = readJSON(URLLIB_KEY, []);
+    if (!Array.isArray(saved) || !saved.length) return;
+    saved.forEach((s) => {
+      if (!s || !s.id || !Array.isArray(s.episodes) || !s.episodes.length) return;
+      const existing = seriesById(s.id);
+      if (existing) return; // folder scan already owns this id
+      series.push({
+        id: s.id, title: s.title, season: s.season, addedAt: s.addedAt || Date.now(),
+        episodes: s.episodes.slice(), online: true, link: true,
+        cadence: s.cadence || 0
+      });
+      if (s.title) queueMatch(seriesById(s.id));
+    });
+    series.sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true }));
+  }
+
+  /* returns the created/updated series, or null */
+  function addLink(title, url) {
+    url = String(url || '').trim();
+    if (!/^https?:\/\/\S+$/i.test(url)) { toast('Link https:// se shuru hona chahiye'); return null; }
+    if (/\.(?:torrent|magnet|zip|rar)$/i.test(url)) { toast('Ye link support nahi hai'); return null; }
+
+    let clean = String(title || '').trim();
+    if (!clean) {
+      try {
+        const u = new URL(url);
+        const last = decodeURIComponent(u.pathname.split('/').filter(Boolean).pop() || '');
+        clean = last.replace(/\.[a-z0-9]{2,5}$/i, '') || u.hostname;
+      } catch (e) { clean = 'Linked video'; }
+    }
+
+    const p = parseName(clean);
+    const baseTitle = p.title || 'Linked videos';
+    const id = 'link-' + slug(baseTitle) + (p.season ? '-' + p.season : '');
+    let s = seriesById(id);
+    if (!s) {
+      s = {
+        id: id, title: displayTitle({ title: baseTitle, season: p.season }),
+        season: p.season, episodes: [], addedAt: Date.now(),
+        online: true, link: true, cadence: 0
+      };
+      series.push(s);
+      queueMatch(s);
+    }
+
+    const used = new Set(s.episodes.map((e) => e.url));
+    if (used.has(url)) { toast('Ye link pehle se library me hai'); return s; }
+
+    let num = p.ep;
+    if (num == null) {
+      const maxNum = s.episodes.reduce((m, e) => (e.num != null && e.num > m ? e.num : m), 0);
+      num = maxNum + 1;
+    }
+    const nextIdx = s.episodes.reduce((m, e) => Math.max(m, e.idx + 1), 0);
+    const label = clean.replace(/\.[a-z0-9]{2,5}$/i, '');
+    s.episodes.push({
+      name: label, label: label, size: 0, num: num, idx: nextIdx, url: url
+    });
+
+    series.sort((a, b) => a.title.localeCompare(b.title, undefined, { numeric: true }));
+    persistLinks();
+    notify();
+    renderAll();
+    toast('“' + s.title + '” · E' + pad2(num) + ' add ho gaya');
+    return s;
+  }
+
+  function removeLinkSeries(s) {
+    if (!s || !s.link) return;
+    series = series.filter((x) => x.id !== s.id);
+    if (currentSeries && currentSeries.id === s.id) { currentSeries = null; view = 'grid'; }
+    persistLinks();
+    notify();
+    renderAll();
+  }
+
+  /* =========================================================
      picking files
      ========================================================= */
   async function walkDir(dir, depth, out, prefix) {
@@ -703,7 +796,41 @@
     b2.addEventListener('click', pickFiles);
     btns.appendChild(b1);
     btns.appendChild(b2);
+    const b3 = el('button', 'btn glass', '🔗 Link se add karo');
+    b3.type = 'button';
+    b3.addEventListener('click', openLinkDialog);
+    btns.appendChild(b3);
     return box;
+  }
+
+  /* =========================================================
+     UI: add-by-link dialog
+     ========================================================= */
+  function openLinkDialog() {
+    const d = $('#libLinkDlg');
+    if (!d) return;
+    const t = $('#lkTitle');
+    const u = $('#lkUrl');
+    if (t) t.value = '';
+    if (u) u.value = '';
+    if (typeof d.showModal === 'function') d.showModal();
+    else d.setAttribute('open', '');
+    setTimeout(() => { try { (u || t).focus(); } catch (e) {} }, 60);
+  }
+
+  function applyLinkForm() {
+    const s = addLink($('#lkTitle') ? $('#lkTitle').value : '', $('#lkUrl') ? $('#lkUrl').value : '');
+    const t = $('#lkTitle');
+    const u = $('#lkUrl');
+    if (t) t.value = '';
+    if (u) u.value = '';
+    if (!s) return;
+    if (lib().hidden) openLibrary(true);
+    view = 'grid';
+    currentSeries = null;
+    renderLibrary();
+    setHash('#/library');
+    if (lib()) lib().scrollTop = 0;
   }
 
   /* =========================================================
@@ -796,6 +923,14 @@
         else toast('Permission nahi mila');
       });
       acts.appendChild(r);
+    }
+    if (s.link) {
+      const rm = el('button', 'btn glass', 'Remove link');
+      rm.type = 'button';
+      rm.addEventListener('click', () => {
+        if (window.confirm('“' + s.title + '” links library se hata dein?')) removeLinkSeries(s);
+      });
+      acts.appendChild(rm);
     }
     info.appendChild(acts);
 
@@ -931,7 +1066,9 @@
     $('#lvNext').hidden = true;
     saveNow();
     v.pause();
-    if (v.src) { URL.revokeObjectURL(v.src); v.removeAttribute('src'); v.load(); }
+    destroyHls();
+    if (v.src && v.src.startsWith('blob:')) URL.revokeObjectURL(v.src);
+    if (v.hasAttribute('src')) { v.removeAttribute('src'); v.load(); }
     if (curSubUrl) { URL.revokeObjectURL(curSubUrl); curSubUrl = null; }
     p.hidden = true;
     document.title = 'AniVerse — anime, trailers & your list';
@@ -940,19 +1077,64 @@
   }
 
   let curCtx = null;
+  let curHls = null;
+  let hlsLoading = null;
+
+  function isHls(url) { return /\.m3u8(?:[?#]|$)/i.test(url); }
+
+  function loadHls() {
+    if (window.Hls) return Promise.resolve(window.Hls);
+    if (hlsLoading) return hlsLoading;
+    hlsLoading = new Promise((res, rej) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js';
+      s.async = true;
+      s.onload = () => (window.Hls ? res(window.Hls) : rej(new Error('hls missing')));
+      s.onerror = () => rej(new Error('hls load failed'));
+      document.head.appendChild(s);
+    }).catch((e) => { hlsLoading = null; throw e; });
+    return hlsLoading;
+  }
+
+  function destroyHls() {
+    if (curHls) { try { curHls.destroy(); } catch (e) {} curHls = null; }
+  }
 
   function loadCurrent() {
     const item = queue[qi];
     if (!item) return;
     const { series: s, epIdx } = item;
     const ep = s.episodes.find((e) => e.idx === epIdx) || s.episodes[0];
-    const file = fileMap.get(s.id + '|' + epIdx) || ep.file;
-    if (!file) { toast('Ye file available nahi hai'); return; }
+    const file = ep.url ? null : (fileMap.get(s.id + '|' + epIdx) || ep.file);
+    if (!ep.url && !file) { toast('Ye file available nahi hai'); return; }
 
     const v = V();
     curCtx = { s: s, ep: ep, epIdx: epIdx };
-    if (v.src) URL.revokeObjectURL(v.src);
-    v.src = URL.createObjectURL(file);
+    destroyHls();
+    if (v.src && v.src.startsWith('blob:')) URL.revokeObjectURL(v.src);
+    const srcUrl = ep.url || null;
+    if (srcUrl) {
+      if (isHls(srcUrl)) {
+        v.removeAttribute('src');
+        loadHls().then((Hls) => {
+          if (!curCtx || curCtx.ep !== ep) return;
+          if (Hls.isSupported()) {
+            curHls = new Hls({ maxBufferLength: 30 });
+            curHls.attachMedia(v);
+            curHls.on(Hls.Events.MEDIA_ATTACHED, () => curHls.loadSource(srcUrl));
+            curHls.on(Hls.Events.ERROR, (ev, data) => {
+              if (data && data.fatal) { pToast('Stream load nahi hui'); destroyHls(); }
+            });
+          } else {
+            v.src = srcUrl;
+          }
+        }).catch(() => { toast('HLS player load nahi hua'); });
+      } else {
+        v.src = srcUrl;
+      }
+    } else {
+      v.src = URL.createObjectURL(file);
+    }
     $('#lvName').textContent = (s.title || '') + ' · ' + (ep.num != null ? 'E' + pad2(ep.num) : ep.label);
 
     const pos = getPos()[s.id + '|' + epIdx] || {};
@@ -1275,6 +1457,30 @@
     // pickers
     $('#libAddFolder').addEventListener('click', pickFolder);
     $('#libAddFiles').addEventListener('click', pickFiles);
+    $('#libAddLink').addEventListener('click', openLinkDialog);
+
+    const dlg = $('#libLinkDlg');
+    if (dlg) {
+      const form = dlg.querySelector('form');
+      if (form) {
+        form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          const cancel = e.submitter && e.submitter.value === 'cancel';
+          if (!cancel) {
+            const u = $('#lkUrl');
+            if (u && !u.checkValidity()) {
+              if (u.reportValidity) u.reportValidity();
+              return;
+            }
+          }
+          dlg.returnValue = cancel ? 'cancel' : 'ok';
+          if (typeof dlg.close === 'function') dlg.close();
+          else dlg.removeAttribute('open');
+          if (!cancel) applyLinkForm();
+        });
+      }
+    }
+
     $('#libSearch').addEventListener('input', () => { view = 'grid'; renderGrid(); });
     $('#libClose').addEventListener('click', () => closeLibrary());
     $('#libDirInput').addEventListener('change', (e) => {
@@ -1296,6 +1502,7 @@
 
     // restore saved index immediately so the UI is never empty
     restoreIndexOnly();
+    loadLinks();
     applyLibHash();
     renderContinueRow();
     notify();
@@ -1347,6 +1554,9 @@
     progressFor: function (seriesId, epIdx) { return getPos()[seriesId + '|' + epIdx] || null; },
     pickFolder: pickFolder,
     pickFiles: pickFiles,
+    addLink: addLink,
+    openLinkDialog: openLinkDialog,
+    removeSeries: removeLinkSeries,
     open: function () { openLibrary(); },
     count: function () { return series.length; },
     isReady: true

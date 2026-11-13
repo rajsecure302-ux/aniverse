@@ -608,9 +608,22 @@
       const b3 = el('button', 'btn small ghost', 'Library kholo');
       b3.type = 'button';
       b3.addEventListener('click', () => { closeDetail(true); L.open(); });
+      const b4 = el('button', 'btn small ghost', '🔗 Link se add');
+      b4.type = 'button';
+      b4.addEventListener('click', () => {
+        closeDetail(true);
+        L.open();
+        const title = (m.title && (m.title.english || m.title.romaji)) || '';
+        setTimeout(() => {
+          L.openLinkDialog();
+          const t = document.querySelector('#lkTitle');
+          if (t && title) t.value = title;
+        }, 140);
+      });
       btns.appendChild(b1);
       btns.appendChild(b2);
       btns.appendChild(b3);
+      btns.appendChild(b4);
       empty.appendChild(btns);
       box.appendChild(empty);
       return;
@@ -1186,7 +1199,7 @@
     toast('AniVerse install ho gaya 🎉', 3000);
   });
 
-  if ('serviceWorker' in navigator) {
+  if ('serviceWorker' in navigator && navigator.serviceWorker) {
     const secure = location.protocol === 'https:' ||
       location.hostname === 'localhost' || location.hostname === '127.0.0.1';
     if (secure) {

@@ -2,7 +2,7 @@
    Strategy: network-first for same-origin files (so deploys are picked up
    immediately), cache as the offline fallback. Cross-origin (AniList, artwork,
    fonts, YouTube) is never intercepted. */
-const CACHE = 'av-shell-v1';
+const CACHE = 'av-shell-v2';
 
 const SHELL = [
   './',

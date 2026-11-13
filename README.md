@@ -55,6 +55,10 @@ Tap **Library** in the top bar (or open `#/library`).
 
 Everything stays on the device: files are read locally with `File`/`FileSystemHandle`, progress lives in `localStorage`, and only the *title* is sent to AniList to fetch artwork.
 
+### Episodes from a link
+
+No files on the phone? Tap **🔗 Link** in the library toolbar and paste a direct video URL — `.mp4`, `.webm`, or `.m3u8` (HLS, played with hls.js when the browser needs it). Give it a title like `Jujutsu Kaisen S01E05` and the episode number is parsed automatically; adding another link with the same show name appends the next episode, so the series page, resume and auto-next work exactly like local files. Links are saved in `localStorage` and play **inside AniVerse** — nothing opens on another site. Use your own host, NAS or any legal direct link (DRM/streaming-site URLs won't work).
+
 Supported containers depend on the browser — **MP4/H.264 and WebM** play everywhere; MKV plays when the codecs inside are supported.
 
 ## Keyboard
@@ -83,6 +87,8 @@ node smoke.mjs
 `pwa.mjs` checks the manifest, icons, service worker and the install wiring.
 
 `library.mjs` feeds fake files into the library input and asserts filename parsing (season/episode/number), grouping, the series view, subtitle matching, playback, auto-next and the continue-watching row.
+
+`links.mjs` adds episodes by direct URL (dialog, parsing, merge, persistence) and asserts the player uses that URL in-site, including the HLS path.
 
 ## Notes on content
 

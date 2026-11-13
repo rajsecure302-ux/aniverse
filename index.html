@@ -198,10 +198,31 @@
       </div>
       <button class="btn small glass" id="libAddFolder" title="Add a folder">＋ Folder</button>
       <button class="btn small glass" id="libAddFiles" title="Add video files">＋ Files</button>
+      <button class="btn small glass" id="libAddLink" title="Add a direct video link">🔗 Link</button>
     </div>
   </div>
   <div id="libBody"></div>
 </div>
+
+<!-- ============ add-by-link dialog ============ -->
+<dialog id="libLinkDlg" class="link-dlg" aria-labelledby="lkHead">
+  <form method="dialog" class="link-form">
+    <h3 id="lkHead">Link se episode add karo</h3>
+    <p class="tiny">Direct video link — <b>.mp4</b>, <b>.webm</b> ya <b>.m3u8</b> (HLS). Apna host, NAS ya legal source. DRM/streaming site ke links kaam nahi karenge.</p>
+    <label class="link-field">
+      <span>Title (episode number ke saath)</span>
+      <input id="lkTitle" type="text" placeholder="Jujutsu Kaisen S01E05" autocomplete="off">
+    </label>
+    <label class="link-field">
+      <span>Video URL</span>
+      <input id="lkUrl" type="url" placeholder="https://example.com/episode.mp4" inputmode="url" required>
+    </label>
+    <div class="link-actions">
+      <button class="btn glass" type="submit" value="cancel" formnovalidate>Cancel</button>
+      <button class="btn primary" id="lkAdd" type="submit" value="ok">Add</button>
+    </div>
+  </form>
+</dialog>
 
 <!-- ============ library player ============ -->
 <div id="libPlayer" class="player" hidden>
