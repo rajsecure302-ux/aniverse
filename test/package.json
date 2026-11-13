@@ -6,7 +6,8 @@
   "scripts": {
     "smoke": "node smoke.mjs",
     "library": "node library.mjs",
-    "all": "node smoke.mjs && node library.mjs"
+    "pwa": "node pwa.mjs",
+    "all": "node smoke.mjs && node library.mjs && node pwa.mjs"
   },
   "keywords": [],
   "type": "commonjs",

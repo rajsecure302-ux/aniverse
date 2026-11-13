@@ -12,6 +12,12 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%230a0b12'/%3E%3Cpath d='M20 18h24v6H35v18h9v6H20v-6h9V24h-9z' fill='%23ff2e63'/%3E%3Cpath d='M44 18l6 6-6 6z' fill='%23ff8a3d'/%3E%3C/svg%3E">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AniVerse">
 </head>
 <body>
 
@@ -47,6 +53,11 @@
   </div>
 
   <div class="tools">
+    <button id="btnInstall" class="icon-btn" title="Install AniVerse" aria-label="Install AniVerse" hidden>
+      <svg viewBox="0 0 24 24" aria-hidden="true" class="i" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 3v11"/><path d="M7.5 10.5L12 15l4.5-4.5"/><path d="M4 18.5h16"/>
+      </svg>
+    </button>
     <button id="btnRandom" class="icon-btn" title="Surprise me" aria-label="Random anime">✦</button>
     <button id="btnLocal" class="btn small" title="My anime library">
       <svg viewBox="0 0 24 24" aria-hidden="true" class="i">

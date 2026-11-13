@@ -1097,6 +1097,48 @@
   /* ---------------- network status ---------------- */
   window.addEventListener('offline', () => toast('Offline — showing cached data only', 3200));
 
+  /* ---------------- PWA: install + offline shell ---------------- */
+  let deferredPrompt = null;
+  const btnInstall = $('#btnInstall');
+
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (btnInstall) btnInstall.hidden = false;
+  });
+
+  if (btnInstall) {
+    btnInstall.addEventListener('click', async () => {
+      if (!deferredPrompt) {
+        toast('Browser menu → “Add to Home screen” se install karo', 4200);
+        return;
+      }
+      deferredPrompt.prompt();
+      try {
+        const choice = await deferredPrompt.userChoice;
+        if (choice && choice.outcome === 'accepted') toast('AniVerse install ho gaya 🎉', 3000);
+      } catch (e) {}
+      deferredPrompt = null;
+      btnInstall.hidden = true;
+    });
+  }
+
+  window.addEventListener('appinstalled', () => {
+    deferredPrompt = null;
+    if (btnInstall) btnInstall.hidden = true;
+    toast('AniVerse install ho gaya 🎉', 3000);
+  });
+
+  if ('serviceWorker' in navigator) {
+    const secure = location.protocol === 'https:' ||
+      location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+    if (secure) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+      });
+    }
+  }
+
   /* ---------------- boot ---------------- */
   function boot() {
     navActive('home');

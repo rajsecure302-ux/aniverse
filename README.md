@@ -34,6 +34,16 @@ python3 -m http.server 8080
 
 or just open `index.html` in a browser (needs internet for AniList images/API).
 
+## Install as an app (PWA)
+
+AniVerse is installable and works offline.
+
+- **Android / Chrome** — tap **⤓** in the top bar (or the browser's *Add to Home screen*). It opens standalone, fullscreen, with its own icon.
+- **Desktop** — the same ⤓ button, or the install icon in the address bar.
+- **Offline** — a service worker (`sw.js`) caches the app shell (`index.html`, CSS, JS, icons) network-first. AniList data falls back to the 45-minute cache and artwork stays in the browser cache, so browsing still works without a connection. Episodes play from local files anyway.
+
+Files: `manifest.webmanifest`, `sw.js`, `icons/`.
+
 ## My library
 
 Tap **Library** in the top bar (or open `#/library`).
@@ -69,6 +79,8 @@ node smoke.mjs
 ```
 
 `smoke.mjs` boots the real page in jsdom against the live AniList API and asserts rows, hero, detail sheet, watchlist, trailer, browse paging and search.
+
+`pwa.mjs` checks the manifest, icons, service worker and the install wiring.
 
 `library.mjs` feeds fake files into the library input and asserts filename parsing (season/episode/number), grouping, the series view, subtitle matching, playback, auto-next and the continue-watching row.
 

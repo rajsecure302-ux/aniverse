@@ -723,3 +723,23 @@ kbd{
   .se-list{max-height:230px}
   .se-head h3{font-size:13px}
 }
+
+/* double-tap seek feedback */
+.seek-hint{
+  position:absolute;top:50%;transform:translateY(-50%);z-index:4;
+  display:grid;place-items:center;
+  width:92px;height:92px;border-radius:50%;
+  font:800 15px/1 Inter,sans-serif;color:#fff;
+  background:rgba(10,12,18,.62);backdrop-filter:blur(6px);
+  border:1px solid rgba(255,255,255,.18);
+  animation:seekpulse .52s ease-out forwards;pointer-events:none;
+}
+.seek-hint.left{left:12%}
+.seek-hint.right{right:12%}
+@keyframes seekpulse{
+  0%{opacity:0;transform:translateY(-50%) scale(.82)}
+  22%{opacity:1;transform:translateY(-50%) scale(1)}
+  100%{opacity:0;transform:translateY(-50%) scale(1.06)}
+}
+.player.idle{cursor:none}
+.player:not(.idle) video{cursor:pointer}

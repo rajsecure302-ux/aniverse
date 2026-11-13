@@ -1004,6 +1004,26 @@
       hideT = setTimeout(() => p.classList.add('idle'), 2800);
     }
   }
+  /* tap = show/hide controls; double-tap = seek / fullscreen */
+  function toggleChrome() {
+    const p = P();
+    if (p.classList.contains('idle')) { wake(); return; }
+    clearTimeout(hideT);
+    p.classList.add('idle');
+  }
+  function seekBy(delta) {
+    const v = V();
+    if (!v.duration) return;
+    v.currentTime = Math.max(0, Math.min(v.duration, v.currentTime + delta));
+    pToast((delta < 0 ? '−' : '+') + Math.abs(delta) + 's');
+    wake();
+  }
+  function seekHint(side) {
+    const p = P();
+    const h = el('div', 'seek-hint ' + side, side === 'left' ? '−10s' : '+10s');
+    p.appendChild(h);
+    setTimeout(() => h.remove(), 520);
+  }
   let pToastT = null;
   function pToast(msg) {
     const t = $('#lvToast');
@@ -1068,8 +1088,23 @@
       if (P().hidden || !v.src) return;
       pToast('Ye format browser me nahi chalta — MP4/WebM try karo');
     });
-    v.addEventListener('click', () => { togglePlay(); wake(); });
-    v.addEventListener('dblclick', toggleFull);
+    let tapTimer = null;
+    v.addEventListener('click', () => {
+      if (tapTimer) return; // second tap of a double-tap
+      tapTimer = setTimeout(() => {
+        tapTimer = null;
+        if (!P().hidden) toggleChrome();
+      }, 250);
+    });
+    v.addEventListener('dblclick', (e) => {
+      clearTimeout(tapTimer);
+      tapTimer = null;
+      const r = v.getBoundingClientRect();
+      const x = r.width ? (e.clientX - r.left) / r.width : 0.5;
+      if (x < 0.33) { seekBy(-10); seekHint('left'); }
+      else if (x > 0.67) { seekBy(10); seekHint('right'); }
+      else toggleFull();
+    });
 
     $('#lvPlay').addEventListener('click', togglePlay);
     $('#lvBig').addEventListener('click', togglePlay);
@@ -1077,8 +1112,8 @@
       const d = v.duration || 0;
       if (d) v.currentTime = (Number(e.target.value) / 1000) * d;
     });
-    $('#lvBack10').addEventListener('click', () => { v.currentTime = Math.max(0, v.currentTime - 10); pToast('−10s'); wake(); });
-    $('#lvFwd10').addEventListener('click', () => { v.currentTime = Math.min(v.duration || 0, v.currentTime + 10); pToast('+10s'); wake(); });
+    $('#lvBack10').addEventListener('click', () => seekBy(-10));
+    $('#lvFwd10').addEventListener('click', () => seekBy(10));
     $('#lvMute').addEventListener('click', () => {
       v.muted = !v.muted;
       $('#lvMute').textContent = v.muted ? '🔇' : '🔊';
@@ -1124,8 +1159,8 @@
       if (typing) return;
       if (e.key === 'Escape') { e.stopPropagation(); closePlayer(); return; }
       if (e.code === 'Space') { e.preventDefault(); togglePlay(); wake(); }
-      if (e.key === 'ArrowLeft') { e.preventDefault(); v.currentTime = Math.max(0, v.currentTime - 10); pToast('−10s'); wake(); }
-      if (e.key === 'ArrowRight') { e.preventDefault(); v.currentTime = Math.min(v.duration || 0, v.currentTime + 10); pToast('+10s'); wake(); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); seekBy(-10); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); seekBy(10); }
       if (e.key === 'ArrowUp') { e.preventDefault(); v.volume = Math.min(1, v.volume + 0.1); $('#lvVol').value = String(v.volume); pToast('Volume ' + Math.round(v.volume * 100) + '%'); wake(); }
       if (e.key === 'ArrowDown') { e.preventDefault(); v.volume = Math.max(0, v.volume - 0.1); $('#lvVol').value = String(v.volume); pToast('Volume ' + Math.round(v.volume * 100) + '%'); wake(); }
       if (e.key === 'm' || e.key === 'M') { v.muted = !v.muted; $('#lvMute').textContent = v.muted ? '🔇' : '🔊'; pToast(v.muted ? 'Muted' : 'Unmuted'); wake(); }
